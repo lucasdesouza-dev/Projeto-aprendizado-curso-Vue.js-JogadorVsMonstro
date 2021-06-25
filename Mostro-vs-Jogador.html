@@ -1,0 +1,243 @@
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <title>Matador de Monstros</title>
+    <link rel="icon" type="imagem/png" href="./icon-mostro.png" />
+    
+</head>
+<body>
+    <div id="app">
+        <div class="painel placares">
+            <div class="placar">
+                <h1>Jogador</h1>
+                <div class="barra-vida">
+                    <div class="vida"
+                        :class="{danger: vidaJogador <20}"
+                        :style="{width: vidaJogador + '%'}"></div>
+                </div>
+                <div>{{vidaJogador}}%</div>
+            </div>
+            <div class="placar">
+                <h1>Monstro</h1>
+                <div class="barra-vida">
+                    <div class="vida"
+                    :class="{danger: vidaMonstro <20}"
+                    :style="{width: vidaMonstro + '%'}"></div>
+                </div>
+                <div>{{vidaMonstro}}%</div>
+            </div>
+        </div>
+        <div v-if="temResultado" class="painel resultados">
+            <div v-if="vidaMonstro == 0" class="vitoria">Voce Ganhou !!! :)</div>
+            <div v-else class="derrota">Voce Perdeu !!! :(</div>
+        </div>
+        <div class="painel controles">
+            <template v-if="jogando">
+                <button class="btn atacar" 
+                    @click="ataque(false)">Atacar</button>
+                <button class="btn ataque-especial"
+                    @click="ataque(true)">Ataque Especial</button>
+                <button class="btn curar"
+                    @click="curaDano">Curar</button>
+                <button class="btn desistir" 
+                    @click="desistir">Desistir</button>
+            </template>
+             <button v-else class="btn iniciar-jogo" @click="iniciarJogo">Iniciar Jogo</button>
+        </div>
+        <div v-if="logs.length" class="painel logs">
+            <ul >
+                <li v-for="log in logs " class="log"
+                    :class="log.cls">{{log.text}} </li>
+            </ul>
+        </div>
+
+</div>
+</body>
+</html>
+
+<script>
+    new Vue({
+        el: '#app',
+        data: {
+            jogando:false,
+            vidaJogador:100,
+            vidaMonstro:100,
+            logs: []
+        }, computed:{
+            temResultado(){
+                return this.vidaJogador == 0 || this.vidaMonstro == 0
+            }
+        },
+        methods: {
+            iniciarJogo() {
+                this.jogando = true
+                this.vidaJogador = 100
+                this.vidaMonstro = 100
+                this.logs = []
+            },
+            desistir() {
+                this.jogando = false
+            },
+            ataque(especial) {
+                this.dano("vidaMonstro",5,10,especial,"jogador","monstro","player")
+                if(this.vidaMonstro > 0){
+                    this.dano("vidaJogador",7,12,false,"monstro","jogador","monster")
+                }
+                
+            },
+            dano(prop,min,max,especial, source,target,cls){
+                const plus = especial ? 5 :0
+                const dano = this.gerarRandom(min + plus, max + plus )
+                this[prop] = Math.max(this[prop] - dano, 0)
+                this.registrarLogs(`${source} atingiu ${target} com ${dano}.`, cls)
+            
+            },
+            cura(min,max){
+                const cura = this.gerarRandom(min,max)
+                this.vidaJogador = Math.min(this.vidaJogador + cura,100)
+                this.registrarLogs(`Jogador ganhou força de ${cura}.`, 'player')
+            },
+            curaDano(){
+                this.cura(10,15)
+                this.dano("vidaJogador",7,12,false,"monstro","jogador","monster")
+            },
+            gerarRandom(max,min){
+                const value = Math.random() * ( max - min ) + min
+                return Math.round(value)
+            },
+            registrarLogs(text,cls){
+                this.logs.unshift({text,cls})
+                
+            },
+
+        },
+        watch:{
+            temResultado(value){
+                if(value) this.jogando = false
+            }
+        }
+    })
+</script>
+<style scoped>
+/*Geral*/
+#app{
+    display: flex;
+    flex-direction: column; 
+}
+.painel{
+    margin: 10px;
+    padding: 20px;
+    box-shadow: 2px 4px 10px rgba(0, 0, 0, 0.75);
+    border-radius: 10px;
+    
+}
+
+/*Pontuação*/
+
+.placares{
+    display: flex;
+    
+}
+.placar{
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    
+}
+.barra-vida{
+    width: 80%;
+    height: 20px;
+    border: 1px solid black;
+}
+.barra-vida .vida{
+    display: flex;
+    justify-content: center;
+    height: 100%;
+    background-color: green;
+}
+.barra-vida .vida.danger{
+    background-color: red;
+}
+
+/* Area de Resultado*/
+
+.resultados{
+    display: flex;
+    justify-content: center;
+    font-size: 1.3rem;
+}
+
+.resultados .vitoria{
+    color: green;
+}
+.resultados .derrota{
+    color: red;
+}
+/* Controles*/
+
+.controles{
+    display: flex;
+    justify-content: center;
+}
+
+.btn{
+    padding: 5px 10px;
+    margin: 0px 10px;
+    border-radius: 5px;
+    text-transform: uppercase;
+    font-size: 1rem;
+    color: white;
+}
+
+.atacar{
+    background-color: red;
+}
+.ataque-especial{
+    background-color: orange;
+    color: black;
+}
+
+.curar{
+    background-color: green;
+}
+.desistir{
+    background-color: darkgray;
+    color: black;
+}
+
+.iniciar-jogo{
+    background-color: blue;
+}
+.logs ul{
+    display: flex;
+    flex-direction: column;
+    list-style: none;
+    padding:0;
+    margin: 0;
+    
+}
+.logs ul li{
+    display: flex;
+    justify-content: center;
+    margin: 4px 0px;
+    font-weight: 600;
+    font-size: 1rem;
+    text-transform: uppercase;
+    border-radius: 5px;
+    border: 1px solid black;
+}
+.monster{
+background-color: red;
+color: #fff;
+}
+.player{
+    background-color:blue;
+    color: #fff;
+}
+
+
+</style>
